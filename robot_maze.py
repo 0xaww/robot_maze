@@ -5,7 +5,7 @@ import random
 import sys
 class Robot(object):
 
-    def __init__(self,mode="all",size=400,move={"up":"u","down":"d","left":"l","right":"r"},debug=False, scan_mode="dst", pic_debug=True,wall= "#",path = " ",begin= "*",dst="D",pic_counter= 50 ):
+    def __init__(self,mode="all",size=400,move={"up":"u","down":"d","left":"l","right":"r"},debug=False, scan_mode="dst", pic_debug=False,wall= "#",path = " ",begin= "*",dst="D",pic_counter= 50 ):
         super(Robot, self).__init__()
         self.mode = mode
         self.start_time = time.time()
@@ -18,7 +18,7 @@ class Robot(object):
         self.now_x = self.begin_x
         self.now_y = self.begin_y
         # now_x为x轴位置，now_y为y轴位置
-        self.array[self.now_y][self.now_x]=1
+        self.array[self.now_y][self.now_x]=7
         self.next_x = 0
         self.next_y = 0
         self.last = [self.begin_x,self.begin_y]
@@ -50,6 +50,7 @@ class Robot(object):
 
         # 单位
         # 1:通道 0:墙 9:未知 8:出口
+        # 1:通道 0:墙 7:起点 8:终点
     def help(self):
         print("useage: ")
         print('● 初始化robot，mode分为all和right')
@@ -87,7 +88,7 @@ class Robot(object):
         return array
 
 
-    def pic2array(self,file="./array2pic.png",point_debug=False,wall = "#",path=" "):
+    def pic2array(self,file="./array2pic.png",point_debug=False,wall = 0,path=1):
         def get_block(pic):
             def four_ways(x,y,pic):
                 try:
@@ -159,7 +160,7 @@ class Robot(object):
             self.exception(e,func_name=sys._getframe().f_code.co_name)
             raise
 
-    def array2pic(self,array,wall ="#",path = " ",dst = "D",begin = "*",file="./array2pic.png"):
+    def array2pic(self,array,wall =0,path = 1,dst = 8,begin = 7,file="./array2pic.png"):
         try:
             pic = Image.new("RGB", (len(array[0]), len(array)))
             for y in range(0,len(array)):
@@ -179,7 +180,7 @@ class Robot(object):
             print(str(e))
             print(x, y)
 
-    def array2maze(self,array,wall_ori = "#",path_ori =  " ",dst_ori ="D" ,begin_ori = "*",wall ="#",path = " ",dst = "D",begin = "*"):
+    def array2maze(self,array,wall_ori = 0,path_ori =  1, begin_ori = 7, dst_ori =8 ,wall ="#",path = " ",dst = "D",begin = "*"):
         for i in range(len(array)):
             for j in range(len(array[0])):
                 if array[i][j] == wall_ori:
@@ -192,7 +193,7 @@ class Robot(object):
                     sys.stdout.write(dst)
             print('')
 
-    def make_maze(self,width=11,height=11,wall ="#",path = " ",dst = "D",begin = "*",debug=False):
+    def make_maze(self,width=11,height=11, wall =0, path = 1, dst = 8,begin = 7,debug=False):
         # num 0 1 7 9 -> str wall path begin dst
         assert width >= 5 and height >= 5, "Length of width or height must be larger than 5."
         width = (width // 2) * 2 + 1
@@ -228,18 +229,19 @@ class Robot(object):
                         queue.append((row_, col_, row, col))
 
         matrix[start[0]][ start[1]] = 7
-        matrix[destination[0]][destination[1]] = 9
+        matrix[destination[0]][destination[1]] = 8
         new_array = []
         for y in matrix:
             tmp = []
             for x in y:
+                # 这里的0和-1不能更改，7和8可以更改
                 if x == 0:
                     tmp.append(path)
                 elif x == -1:
                     tmp.append(wall)
                 elif x == 7:
                     tmp.append(begin)
-                elif x == 9:
+                elif x == 8:
                     tmp.append(dst)
             new_array.append(tmp)
         matrix = new_array
@@ -248,7 +250,7 @@ class Robot(object):
         return matrix
 
 
-    def save_pic(self,file ="save_pic.png" ):
+    def save_pic(self,file ="save_pic.png"):
         try:
             min_x = len(self.array[0])
             min_y = len(self.array)
@@ -266,15 +268,17 @@ class Robot(object):
                         if y < min_y:
                             min_y = y
             # MAX = len(self.array)
-            pic = Image.new("RGB", (max_x-min_x+3, max_y-min_y+3))
-            for y in range(min_y,max_y):
-                for x in range(min_x,max_x):
+            pic = Image.new("RGB", (max_x-min_x+1, max_y-min_y+1))
+            for y in range(min_y,max_y+1):
+                for x in range(min_x,max_x+1):
                     if self.array[y][x] == 1:
                         pic.putpixel([x-min_x, y-min_y], (255, 255, 255))
                     elif self.array[y][x] == 0:
                         pic.putpixel([x-min_x, y-min_y], (0, 0, 0))
                     elif self.array[y][x] == 8:
                         pic.putpixel([x-min_x, y-min_y], (0, 255, 127))
+                    elif self.array[y][x] == 7:
+                        pic.putpixel([x-min_x, y-min_y], (255, 0, 0))
             x = self.begin_x-min_x
             y = self.begin_y-min_y
             if len(self.min_output) != 0:
@@ -307,10 +311,12 @@ class Robot(object):
             # pic = pic.resize((pic.size[0]*20, pic.size[1]*20))
             pic.save(file)
         except Exception as e:
-            self.exception(e,func_name=sys._getframe().f_code.co_name)
             print(min_x,max_x,min_y,max_y)
             print(str(e))
             print(x, y)
+            print array
+            self.exception(e,func_name=sys._getframe().f_code.co_name)
+
 
 
 
@@ -393,13 +399,6 @@ class Robot(object):
                     self.output = self.now_output + self.next_output
                 else :
                     self.point_finish = 1
-                self.counter += 1
-                if self.debug:
-                    print self.counter
-                if self.counter >= self.pic_counter:
-                    if self.pic_debug:
-                        self.save_pic()
-                    self.counter = 1
         except Exception as e:
             self.exception(e,func_name=sys._getframe().f_code.co_name)
 
@@ -488,6 +487,13 @@ class Robot(object):
                     elif self.scan_mode == "all":
                         self.dst_finish = 1
                     self.save_pic()
+                self.counter += 1
+                if self.debug:
+                    print self.counter
+                if self.counter >= self.pic_counter:
+                    if self.pic_debug:
+                        self.save_pic()
+                    self.counter = 1
         except Exception as e:
             self.exception(e,func_name=sys._getframe().f_code.co_name)
 
@@ -542,5 +548,60 @@ class Robot(object):
                         self.next_exit = []
                         self.point_finish = 0
                         # 更换完点后，再次获取四个方向
+        except Exception as e:
+            self.exception(e,func_name=sys._getframe().f_code.co_name)
+
+    def array2solve(self,array, wall = 0, path = 1, begin = 7, dst = 8, move={"up":"u","down":"d","left":"l","right":"r"}):
+        try:
+            # 参数中，wall、path、begin、dst必须设置，防止错误
+            robot = Robot(move=move)
+            end_x = end_y = begin_x = begin_y = -1
+            # 根据字符，找到起点和终点坐标
+            for y in range(len(array)):
+                for x in range(len(array[0])):
+                    if array[y][x] == dst:
+                        end_x = x
+                        end_y = y
+                    elif array[y][x] == begin:
+                        begin_x = x
+                        begin_y = y
+            if end_x == -1 or end_y == -1 or begin_x == -1 or begin_y == -1 :
+                self.exception("获取起点和终点坐标失败",func_name=sys._getframe().f_code.co_name)
+            while not robot.all_finish:
+                x = begin_x
+                y = begin_y
+                next_step = robot.next_step()
+                # print next_step
+                for step in next_step:
+                    if step == move["right"]:
+                        x = x + 1
+                    elif step == move["down"]:
+                        y = y + 1
+                    elif step == move["left"]:
+                        x = x - 1
+                    elif step == move["up"]:
+                        y = y - 1
+                # print num
+                if x <0 or y < 0 or y >=len(array) or x >= len(array) :
+                    robot.set_point(0)
+                elif array[y][x] == wall:
+                    robot.set_point(0)
+                elif array[y][x] == path:
+                    robot.set_point(1)
+                elif array[y][x] == dst:
+                    robot.set_point(8)
+            return robot.all_output
+        except Exception as e:
+            self.exception(e,func_name=sys._getframe().f_code.co_name)
+    def pic2solve(self,file,start_x=1,start_y=1,end_x=-2,end_y=-2,move={"up":"u","down":"d","left":"l","right":"r"}):
+        try:
+            # pic2solve中，file,start_x,start_y,end_x,end_y参数必须设置
+            array = self.pic2array(file)
+            print len(array)
+            print len(array[0])
+            array[start_y][start_x]= 7
+            array[end_y][end_x]= 8
+            output = self.array2solve(array, wall = 0, path = 1, begin = 7, dst = 8,move=move)
+            return output
         except Exception as e:
             self.exception(e,func_name=sys._getframe().f_code.co_name)
