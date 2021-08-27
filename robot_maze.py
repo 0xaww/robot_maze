@@ -71,7 +71,7 @@ class Robot(object):
         print('    array = robot.make_maze(width=11,height=11,wall ="#",path = " ",dst = "D",begin = "*",debug=True)')
 
     def exception(self,e="robot failed",func_name="unknown"):
-        print(func_name +"has a problem:")
+        print(func_name +" has a problem:")
         print(str(e))
         if self.pic_debug:
             self.save_pic()
@@ -118,14 +118,13 @@ class Robot(object):
 
             x_list=[]
             y_list=[]
-            for i in range(1,20):
-                for j in range(1,20):
+            for i in range(1,10):
+                for j in range(1,10):
                     try:
-                        x1,y1 = four_ways((pic.size[0]*j)/20,(pic.size[1]*i)/20,pic)
+                        x1,y1 = four_ways((pic.size[0]*j)/10,(pic.size[1]*i)/10,pic)
                         x_list.append(x1)
                         y_list.append(y1)
                     except Exception as e:
-                        print(str(e))
                         print("pic2array get_block one point error")
                         self.exception(e,func_name=sys._getframe().f_code.co_name)
 
@@ -157,9 +156,6 @@ class Robot(object):
                 check_pic.save("check_point.png")
             return array
         except Exception as e:
-            print(x_size)
-            print(x,y)
-            print(str(e))
             self.exception(e,func_name=sys._getframe().f_code.co_name)
             raise
 
@@ -270,7 +266,7 @@ class Robot(object):
                         if y < min_y:
                             min_y = y
             # MAX = len(self.array)
-            pic = Image.new("RGB", (max_x-min_x+1, max_y-min_y+1))
+            pic = Image.new("RGB", (max_x-min_x+3, max_y-min_y+3))
             for y in range(min_y,max_y):
                 for x in range(min_x,max_x):
                     if self.array[y][x] == 1:
